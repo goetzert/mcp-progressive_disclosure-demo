@@ -1,11 +1,11 @@
 import json
-import os
 from pathlib import Path
 
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import JSONResponse, StreamingResponse, FileResponse
-from starlette.routing import Route
+from starlette.routing import Route, Mount
+from starlette.staticfiles import StaticFiles
 
 from backend.naive_mode import run_naive_mode
 from backend.progressive_mode import run_progressive_mode
@@ -54,6 +54,7 @@ routes = [
     Route("/", index),
     Route("/api/demo", run_demo, methods=["POST"]),
     Route("/api/demo/stream", run_demo_stream, methods=["POST"]),
+    Mount("/", app=StaticFiles(directory=str(FRONTEND_DIR))),
 ]
 
 

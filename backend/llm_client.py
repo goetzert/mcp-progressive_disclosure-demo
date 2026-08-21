@@ -7,6 +7,7 @@ async def chat_completion(
     messages: list[dict],
     tools: list[dict] | None = None,
     model: str | None = None,
+    tool_choice: str | None = None,
 ) -> dict:
     headers = {
         "Authorization": f"Bearer {settings.scadsai_api_key}",
@@ -22,6 +23,8 @@ async def chat_completion(
         payload["tools"] = [
             {"type": "function", "function": t} for t in tools
         ]
+        if tool_choice:
+            payload["tool_choice"] = tool_choice
 
     async with httpx.AsyncClient(timeout=settings.scadsai_request_timeout) as client:
         response = await client.post(

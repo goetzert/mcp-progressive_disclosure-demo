@@ -8,15 +8,21 @@ from backend.token_counter import count_schema_tokens, count_message_tokens
 SEARCH_TOOL_SCHEMA = {
     "name": "search_tools",
     "description": (
-        "Search for relevant tools by keyword. Use this to find tools "
-        "that match the user's query. Returns a list of matching tool names."
+        "Search the tool catalog for tools relevant to the user's query. "
+        "This is the ONLY tool you have. You MUST call it first. "
+        "After calling it, the system will return matching tools that "
+        "you can then use to answer the user's question."
     ),
     "parameters": {
         "type": "object",
         "properties": {
             "query": {
                 "type": "string",
-                "description": "Search query to find relevant tools.",
+                "description": (
+                    "Search query. Use keywords from the user's request. "
+                    "For example: 'weather', 'customer', 'order', 'invoice'. "
+                    "Both English and German keywords are supported."
+                ),
             },
         },
         "required": ["query"],
@@ -24,14 +30,23 @@ SEARCH_TOOL_SCHEMA = {
 }
 
 SEARCH_SYSTEM_PROMPT = (
-    "You are a helpful assistant. You have access to a single tool: "
-    "search_tools. Use it to find relevant tools for the user's query. "
+    "You are a helpful assistant with access to a large catalog of tools "
+    "(weather, customers, orders, finance, and more). However, you cannot "
+    "see all tools at once.\n\n"
+    "You have ONE tool available right now: search_tools. "
+    "You MUST call search_tools with a relevant query to discover the "
+    "actual tools you need. This is mandatory — do NOT answer the user's "
+    "question directly without first calling search_tools.\n\n"
+    "Example: If the user asks 'Wie ist das Wetter in Leipzig?', call "
+    "search_tools(query='Wetter Leipzig'). The system will then provide "
+    "you with the relevant weather tools.\n\n"
     "Always respond in the same language as the user's query."
 )
 
 EXECUTE_SYSTEM_PROMPT = (
     "You are a helpful assistant with access to a few relevant tools. "
-    "Select the most appropriate tool and call it. "
+    "You MUST call the most appropriate tool to answer the user's question. "
+    "Do not refuse or say you cannot access data — you have the tools. "
     "Always respond in the same language as the user's query."
 )
 
@@ -70,8 +85,12 @@ async def run_progressive_mode(user_message: str) -> dict:
         "tools_sent_to_llm": 1,
     })
 
-    # Step 3: LLM calls search_tools
-    llm_response = await chat_completion(messages, tools=search_tools)
+    # Step 3: LLM calls search_tools (forced via tool_choice)
+    llm_response = await chat_completion(
+        messages,
+        tools=search_tools,
+        tool_choice="required",
+    )
     tool_call = extract_tool_call(llm_response)
 
     if not tool_call or tool_call["name"] != "search_tools":
@@ -114,7 +133,11 @@ async def run_progressive_mode(user_message: str) -> dict:
     total_schema_tokens += schema_tokens
     total_message_tokens += message_tokens
 
-    llm_response = await chat_completion(messages, tools=candidates)
+    llm_response = await chat_completion(
+        messages,
+        tools=candidates,
+        tool_choice="required",
+    )
     tool_call = extract_tool_call(llm_response)
 
     if tool_call:
