@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Progressive Disclosure Demo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+    <h1>MCP Progressive Disclosure Demo</h1>
+    <p class="subtitle">Side-by-side comparison: Normal MCP vs Progressive MCP</p>
+</header>
+
+<main>
+    <!-- Token Reduction Bar Chart -->
+    <section class="chart-section">
+        <h2>Token Reduction</h2>
+        <div id="chart-container"></div>
+        <div id="reduction-info" class="reduction-info"></div>
+    </section>
+
+    <!-- Side-by-side comparison panels -->
+    <section class="comparison">
+        <!-- Normal MCP Panel -->
+        <div class="panel normal-panel" id="normal-panel">
+            <div class="panel-header">NORMAL MCP</div>
+            <div class="panel-body">
+                <div class="metric-row">
+                    <span class="metric-label">Tools available:</span>
+                    <span class="metric-value" id="normal-tools-available">100</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Tools sent to LLM:</span>
+                    <span class="metric-value" id="normal-tools-sent">—</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Schema tokens:</span>
+                    <span class="metric-value" id="normal-schema-tokens">—</span>
+                </div>
+                <div class="flow-visualization" id="normal-flow">
+                    <div class="placeholder">Awaiting prompt…</div>
+                </div>
+                <div class="metric-row total-row">
+                    <span class="metric-label">Total tokens:</span>
+                    <span class="metric-value" id="normal-total-tokens">—</span>
+                </div>
+                <div class="answer-box" id="normal-answer" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- Progressive MCP Panel -->
+        <div class="panel progressive-panel" id="progressive-panel">
+            <div class="panel-header">PROGRESSIVE MCP</div>
+            <div class="panel-body">
+                <div class="metric-row">
+                    <span class="metric-label">Tools available:</span>
+                    <span class="metric-value" id="progressive-tools-available">100</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Tools sent to LLM:</span>
+                    <span class="metric-value" id="progressive-tools-sent">—</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Schema tokens:</span>
+                    <span class="metric-value" id="progressive-schema-tokens">—</span>
+                </div>
+                <div class="flow-visualization" id="progressive-flow">
+                    <div class="placeholder">Awaiting prompt…</div>
+                </div>
+                <div class="metric-row total-row">
+                    <span class="metric-label">Total tokens:</span>
+                    <span class="metric-value" id="progressive-total-tokens">—</span>
+                </div>
+                <div class="answer-box" id="progressive-answer" style="display:none;"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Prompt Input -->
+    <section class="prompt-section">
+        <div class="prompt-label">Prompt:</div>
+        <div class="prompt-input-row">
+            <input
+                type="text"
+                id="prompt-input"
+                class="prompt-input"
+                placeholder="Wie ist das Wetter in Leipzig?"
+                value="Wie ist das Wetter in Leipzig?"
+            >
+            <button id="run-btn" class="run-btn">Run</button>
+        </div>
+    </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

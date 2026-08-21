@@ -1,9 +1,13 @@
 [project]
 name = "mcp-progressive-disclosure"
 version = "0.1.0"
-description = "Add your description here"
+description = "Progressive disclosure demo for MCP"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "fastmcp>=3.4.7",
+    "httpx>=0.28.0",
+    "pydantic-settings>=2.15.0",
+    "tiktoken>=0.9.0",
+    "uvicorn>=0.30.0",
 ]
