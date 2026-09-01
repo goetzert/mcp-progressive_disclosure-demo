@@ -1,9 +1,12 @@
 [project]
 name = "mcp-progressive-disclosure"
 version = "0.1.0"
-description = "Progressive disclosure demo for MCP"
+description = "Progressive disclosure demo for MCP — side-by-side comparison of normal vs. progressive tool injection"
 readme = "README.md"
 requires-python = ">=3.14"
+authors = [
+    { name = "ScaDS.AI", email = "info@scads.ai" },
+]
 dependencies = [
     "fastmcp>=3.4.7",
     "httpx>=0.28.0",

@@ -1,3 +1,10 @@
+"""Thin HTTP client for the ScaDS.AI chat-completion API.
+
+Provides async functions to send a chat-completion request (optionally with
+tool definitions) and helper functions to extract tool calls and plain text
+content from the API response.
+"""
+
 import json
 import httpx
 from backend.config import settings
@@ -9,6 +16,17 @@ async def chat_completion(
     model: str | None = None,
     tool_choice: str | None = None,
 ) -> dict:
+    """Send a chat-completion request to the ScaDS.AI API.
+
+    Args:
+        messages: Conversation messages following the OpenAI format.
+        tools: Optional list of tool schemas (OpenAI function-calling format).
+        model: Override the configured chat model.
+        tool_choice: Control tool selection (``"auto"``, ``"required"``, or ``None``).
+
+    Returns:
+        The raw JSON response from the API.
+    """
     headers = {
         "Authorization": f"Bearer {settings.scadsai_api_key}",
         "Content-Type": "application/json",
@@ -37,6 +55,15 @@ async def chat_completion(
 
 
 def extract_tool_call(response: dict) -> dict | None:
+    """Extract the first tool call from an API response.
+
+    Args:
+        response: The JSON response returned by :func:`chat_completion`.
+
+    Returns:
+        A dict with ``id``, ``name``, and ``arguments`` keys, or ``None`` if
+        the response contains no tool calls.
+    """
     choices = response.get("choices", [])
     if not choices:
         return None
@@ -57,6 +84,14 @@ def extract_tool_call(response: dict) -> dict | None:
 
 
 def extract_content(response: dict) -> str:
+    """Extract the plain-text content from an API response.
+
+    Args:
+        response: The JSON response returned by :func:`chat_completion`.
+
+    Returns:
+        The content string, or an empty string if no content is present.
+    """
     choices = response.get("choices", [])
     if not choices:
         return ""

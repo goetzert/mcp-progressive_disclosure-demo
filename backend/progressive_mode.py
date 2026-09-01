@@ -1,3 +1,23 @@
+"""Progressive MCP mode — tool schemas are injected dynamically.
+
+Instead of sending all ~101 tool schemas upfront, the progressive mode sends
+only a single ``search_tools`` schema to the LLM.  After the LLM calls
+``search_tools``, the system performs a keyword search over all tool
+definitions and injects only the top-k matching tool schemas into the next
+API call.
+
+Flow:
+    1. Fetch all tools from the MCP server (to build the search index).
+    2. Send only the ``search_tools`` schema + user message to the LLM.
+    3. LLM calls ``search_tools(query=…)``.
+    4. Search locally for the top-k matching tools.
+    5. Inject candidate tool schemas and let the LLM call a tool.
+    6. LLM generates a final answer using the tool result.
+
+The schema-token count is dramatically lower than the naive mode because
+only one small schema is sent in the initial request.
+"""
+
 import json
 from backend.mcp_client import list_all_tools, call_tool
 from backend.llm_client import chat_completion, extract_tool_call, extract_content
@@ -5,6 +25,7 @@ from backend.tool_search import search
 from backend.token_counter import count_schema_tokens, count_message_tokens
 
 
+#: Schema for the single ``search_tools`` tool that the LLM sees initially.
 SEARCH_TOOL_SCHEMA = {
     "name": "search_tools",
     "description": (
@@ -29,6 +50,8 @@ SEARCH_TOOL_SCHEMA = {
     },
 }
 
+#: System prompt for the search phase.  Forces the LLM to call
+#: ``search_tools`` before attempting to answer.
 SEARCH_SYSTEM_PROMPT = (
     "You are a helpful assistant with access to a large catalog of tools "
     "(weather, customers, orders, finance, and more). However, you cannot "
@@ -43,6 +66,8 @@ SEARCH_SYSTEM_PROMPT = (
     "Always respond in the same language as the user's query."
 )
 
+#: System prompt for the execution phase.  The LLM now sees a small set
+#: of candidate tools and must call one of them.
 EXECUTE_SYSTEM_PROMPT = (
     "You are a helpful assistant with access to a few relevant tools. "
     "You MUST call the most appropriate tool to answer the user's question. "
@@ -52,6 +77,19 @@ EXECUTE_SYSTEM_PROMPT = (
 
 
 async def run_progressive_mode(user_message: str) -> dict:
+    """Execute the progressive MCP mode for a single user message.
+
+    Only a ``search_tools`` schema is sent initially.  After the LLM
+    searches, matching candidate tools are injected dynamically.
+
+    Args:
+        user_message: The user's input prompt.
+
+    Returns:
+        A result dict containing ``mode``, ``tools_available``,
+        ``tools_sent_to_llm``, ``schema_tokens``, ``message_tokens``,
+        ``total_tokens``, ``answer``, and ``steps``.
+    """
     steps = []
     total_schema_tokens = 0
     total_message_tokens = 0

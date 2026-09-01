@@ -1,3 +1,15 @@
+"""Starlette web application — serves the frontend and API endpoints.
+
+Endpoints:
+    ``GET  /``               — Serves ``frontend/index.html``.
+    ``POST /api/demo``       — Runs both modes, returns combined JSON.
+    ``POST /api/demo/stream`` — Runs both modes, streams results via SSE.
+    ``GET  /<static>``       — Serves static frontend assets.
+
+The application is started via ``python -m backend.main`` and listens on
+``BACKEND_HOST:BACKEND_PORT`` (default ``127.0.0.1:8080``).
+"""
+
 import json
 from pathlib import Path
 
@@ -12,14 +24,20 @@ from backend.progressive_mode import run_progressive_mode
 from backend.config import settings
 
 
+#: Directory containing the frontend assets (HTML, CSS, JS).
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 
 
 async def index(request: Request):
+    """Serve the main HTML page."""
     return FileResponse(FRONTEND_DIR / "index.html")
 
 
 async def run_demo(request: Request):
+    """Run both naive and progressive modes and return the combined result.
+
+    Expects a JSON body with a ``message`` field.
+    """
     body = await request.json()
     user_message = body.get("message", "")
 
@@ -33,6 +51,11 @@ async def run_demo(request: Request):
 
 
 async def run_demo_stream(request: Request):
+    """Run both modes and stream results via Server-Sent Events.
+
+    Expects a JSON body with a ``message`` field.  Emits two SSE events
+    (``naive`` and ``progressive``) followed by a final ``done`` event.
+    """
     body = await request.json()
     user_message = body.get("message", "")
 

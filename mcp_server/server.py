@@ -1,3 +1,11 @@
+"""FastMCP server for the progressive-disclosure demo.
+
+Creates a single :class:`FastMCP` instance and registers all tool modules
+(``weather``, ``customers``, ``orders``, ``finance``, ``dummy``).  The server
+can run standalone on port 8000 or be accessed in-process via the in-memory
+MCP client.
+"""
+
 from fastmcp import FastMCP
 
 mcp = FastMCP("Progressive Disclosure Demo")

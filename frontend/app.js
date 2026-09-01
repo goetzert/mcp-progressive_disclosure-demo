@@ -1,13 +1,36 @@
+/**
+ * Progressive Disclosure Demo — Frontend logic.
+ *
+ * Communicates with the backend via ``POST /api/demo`` and renders
+ * side-by-side comparison panels, flow visualisations, and a token-reduction
+ * bar chart.
+ */
+
 const API_BASE = "";
 const DEFAULT_PROMPT = "Wie ist das Wetter in Leipzig?";
 
+/**
+ * Shorthand for ``document.getElementById``.
+ * @param {string} id — Element ID.
+ * @returns {HTMLElement}
+ */
 const el = (id) => document.getElementById(id);
 
+/**
+ * Set a placeholder message inside a panel's flow area.
+ * @param {string} panelId — Panel prefix (``"normal"`` or ``"progressive"``).
+ * @param {string} text — Placeholder text to display.
+ */
 function setPlaceholder(panelId, text) {
     const flow = el(`${panelId}-flow`);
     flow.innerHTML = `<div class="placeholder">${text}</div>`;
 }
 
+/**
+ * Append a flow step to a panel's flow area, removing any existing placeholder.
+ * @param {string} panelId — Panel prefix.
+ * @param {string} stepHtml — HTML string for the flow step.
+ */
 function appendFlowStep(panelId, stepHtml) {
     const flow = el(`${panelId}-flow`);
     const placeholder = flow.querySelector(".placeholder");
@@ -15,6 +38,11 @@ function appendFlowStep(panelId, stepHtml) {
     flow.innerHTML += stepHtml;
 }
 
+/**
+ * Render the naive (normal) mode result into the left panel.
+ * Updates metrics, flow steps, and the answer box.
+ * @param {Object} data — Result dict from the backend for the naive mode.
+ */
 function renderNormalResult(data) {
     el("normal-tools-available").textContent = data.tools_available;
     el("normal-tools-sent").textContent = data.tools_sent_to_llm;
@@ -41,6 +69,12 @@ function renderNormalResult(data) {
     });
 }
 
+/**
+ * Render the progressive mode result into the right panel.
+ * Updates metrics, flow steps (including search and candidate steps),
+ * and the answer box.
+ * @param {Object} data — Result dict from the backend for the progressive mode.
+ */
 function renderProgressiveResult(data) {
     el("progressive-tools-available").textContent = data.tools_available;
     el("progressive-tools-sent").textContent = data.tools_sent_to_llm;
@@ -70,6 +104,11 @@ function renderProgressiveResult(data) {
     });
 }
 
+/**
+ * Render the token-reduction bar chart comparing naive vs. progressive totals.
+ * @param {number} naiveTotal — Total tokens from the naive mode.
+ * @param {number} progressiveTotal — Total tokens from the progressive mode.
+ */
 function renderChart(naiveTotal, progressiveTotal) {
     const maxTokens = Math.max(naiveTotal, progressiveTotal, 1);
     const container = el("chart-container");
@@ -100,6 +139,12 @@ function renderChart(naiveTotal, progressiveTotal) {
     }
 }
 
+/**
+ * Run the demo: send the user's prompt to the backend, then render results
+ * for both modes and the token-reduction chart.
+ * Disables the run button while the request is in flight.
+ * @returns {Promise<void>}
+ */
 async function runDemo() {
     const prompt = el("prompt-input").value.trim();
     if (!prompt) return;

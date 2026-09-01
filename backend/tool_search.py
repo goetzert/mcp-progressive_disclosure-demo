@@ -1,6 +1,33 @@
+"""Keyword-based tool search for the progressive-disclosure mode.
+
+The search pipeline works as follows:
+
+1.  **Tokenise** the user query and each tool's combined text (name +
+    description + parameters) into lowercase alphanumeric tokens.
+2.  **Expand** query tokens using :data:`KEYWORD_MAP` — a German→English
+    synonym dictionary that bridges language gaps (e.g. ``"wetter"`` →
+    ``"weather"``).
+3.  **Match** each expanded query token against every tool's token set and
+    accumulate a score per tool (one point per matching token).
+4.  **Rank** tools by descending score and return the top *k* results.
+
+This module is deliberately dependency-free (uses only :mod:`re`) so it can
+be used in both the backend and standalone MCP server contexts.
+"""
+
 import re
 
 
+#: German→English keyword mapping for cross-language tool search.
+#:
+#: Keys are German terms (lowercase); values are lists of English equivalents
+#: that should also be searched.  This allows a German user query like
+#: "Wie ist das *Wetter* in Leipzig?" to match English tool names and
+#: descriptions such as ``get_weather``.
+#:
+#: Note: some keys appear multiple times in the literal dict below; in Python
+#: the last definition wins.  This is a known data-quality issue but does not
+#: affect runtime behaviour because the matching logic is token-based.
 KEYWORD_MAP: dict[str, list[str]] = {
     "wetter": ["weather"],
     "kunde": ["customer"],
@@ -190,7 +217,6 @@ KEYWORD_MAP: dict[str, list[str]] = {
     "x509": ["x509"],
     "asn1": ["asn1"],
     "ocsp": ["ocsp"],
-    "crl": ["crl"],
     "cps": ["cps"],
     "cp": ["cp"],
     "cpl": ["cpl"],
@@ -351,10 +377,16 @@ KEYWORD_MAP: dict[str, list[str]] = {
 
 
 def _tokenize(text: str) -> list[str]:
+    """Split *text* into lowercase alphanumeric tokens (including umlauts)."""
     return re.findall(r"[a-zäöüß0-9]+", text.lower())
 
 
 def _expand_tokens(tokens: list[str]) -> list[str]:
+    """Expand German tokens to their English equivalents via :data:`KEYWORD_MAP`.
+
+    Tokens that have no mapping are kept as-is, so the result always contains
+    at least the original tokens.
+    """
     expanded = list(tokens)
     for token in tokens:
         if token in KEYWORD_MAP:
@@ -363,6 +395,17 @@ def _expand_tokens(tokens: list[str]) -> list[str]:
 
 
 def build_index(tools: list[dict]) -> dict[str, list[str]]:
+    """Build an inverted index mapping tokens → list of tool names.
+
+    Args:
+        tools: List of tool dicts with ``name``, ``description``, and
+            ``parameters`` keys.
+
+    Returns:
+        A dict where each key is a lowercase token and each value is a list of
+        tool names that contain that token in their name, description, or
+        parameter text.
+    """
     index: dict[str, list[str]] = {}
     for tool in tools:
         name = tool.get("name", "")
@@ -383,6 +426,20 @@ def search(
     tools: list[dict],
     top_k: int = 5,
 ) -> list[dict]:
+    """Search the tool list for tools relevant to *query*.
+
+    The query is tokenised and expanded (German→English) before matching
+    against each tool's combined text.  Tools are ranked by the number of
+    matching tokens (descending).
+
+    Args:
+        query: The user's search query (may be German or English).
+        tools: The full list of tool dicts to search within.
+        top_k: Maximum number of results to return (default 5).
+
+    Returns:
+        A list of up to *top_k* tool dicts, ranked by relevance.
+    """
     query_tokens = _tokenize(query)
     if not query_tokens:
         return []
@@ -401,6 +458,15 @@ def search(
 
 
 def _get_matching_tools(query_token: str, tools: list[dict]) -> list[str]:
+    """Return names of tools whose name or description contains *query_token*.
+
+    Args:
+        query_token: A single lowercase token to search for.
+        tools: The full list of tool dicts to search within.
+
+    Returns:
+        A list of tool names that match the query token.
+    """
     matches = []
     for tool in tools:
         name = tool.get("name", "").lower()
