@@ -21,7 +21,7 @@ visualization for each mode, plus a token-reduction bar chart.
 │  Side-by-side: Normal MCP vs Progressive MCP         │
 │  Token reduction bar chart + prompt input            │
 └────────────────────┬────────────────────────────────┘
-                     │ HTTP (SSE for streaming)
+                     │ HTTP POST /api/demo
 ┌────────────────────┴────────────────────────────────┐
 │           Backend (Starlette/Uvicorn)                │
 │  ┌────────────┐  ┌──────────────────┐  ┌─────────┐ │
@@ -53,7 +53,9 @@ MCP server terminal and SSE handling issues on Windows.
 - `tools/orders.py` — 12 order tools (create, get, list, cancel, etc.)
 - `tools/finance.py` — 12 finance tools (get_invoice, create_invoice, calculate_tax, etc.)
 - `tools/dummy.py` — 55 programmatically generated dummy tools to reach 101 total
-- `data/` — JSON data files for tool responses (customers.json, orders.json, weather.json, etc.)
+
+All tools return fixed, hardcoded dummy data (no database or JSON files) —
+this is a token-counting demo, not a functional business app.
 
 **Backend (`backend/`)**
 - `config.py` — pydantic-settings for SCADSAI_API_KEY, API_BASE, CHAT_MODEL, ports
@@ -255,10 +257,6 @@ mcp_progressive_disclosure/
 │   │   ├── orders.py
 │   │   ├── finance.py
 │   │   └── dummy.py
-│   └── data/
-│       ├── customers.json
-│       ├── orders.json
-│       └── weather.json
 ├── backend/
 │   ├── __init__.py
 │   ├── main.py
